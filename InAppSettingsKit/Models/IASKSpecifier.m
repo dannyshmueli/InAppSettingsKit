@@ -18,15 +18,12 @@
 #import "IASKSettingsReader.h"
 
 @interface IASKSpecifier ()
+
 @property (nonatomic, retain) NSDictionary  *multipleValuesDict;
-- (void)_reinterpretValues:(NSDictionary*)specifierDict;
+
 @end
 
 @implementation IASKSpecifier
-
-@synthesize specifierDict=_specifierDict;
-@synthesize multipleValuesDict=_multipleValuesDict;
-@synthesize settingsReader = _settingsReader;
 
 - (id)initWithSpecifier:(NSDictionary*)specifier {
     if ((self = [super init])) {
@@ -40,15 +37,6 @@
     return self;
 }
 
-- (void)dealloc {
-    [_specifierDict release], _specifierDict = nil;
-    [_multipleValuesDict release], _multipleValuesDict = nil;
-	
-	_settingsReader = nil;
-
-    [super dealloc];
-}
-
 - (void)_reinterpretValues:(NSDictionary*)specifierDict {
     NSArray *values = [_specifierDict objectForKey:kIASKValues];
     NSArray *titles = [_specifierDict objectForKey:kIASKTitles];
@@ -57,8 +45,8 @@
 
 -(void)setMultipleValuesDictValues:(NSArray *)values andTitles:(NSArray *)titles
 {
-
-    NSMutableDictionary *multipleValuesDict = [[[NSMutableDictionary alloc] init] autorelease];
+    NSArray *shortTitles = [_specifierDict objectForKey:kIASKShortTitles];
+    NSMutableDictionary *multipleValuesDict = [NSMutableDictionary new];
     
     if (values) {
 		[multipleValuesDict setObject:values forKey:kIASKValues];
@@ -66,6 +54,10 @@
 	
     if (titles) {
 		[multipleValuesDict setObject:titles forKey:kIASKTitles];
+	}
+    
+    if (shortTitles) {
+		[multipleValuesDict setObject:shortTitles forKey:kIASKShortTitles];
 	}
     
     [self setMultipleValuesDict:multipleValuesDict];
@@ -112,7 +104,10 @@
 
 - (NSString*)titleForCurrentValue:(id)currentValue {
 	NSArray *values = [self multipleValues];
-	NSArray *titles = [self multipleTitles];
+	NSArray *titles = [self multipleShortTitles];
+    if (!titles)
+        titles = [self multipleTitles];
+
 	if (values.count != titles.count) {
 		return nil;
 	}
@@ -137,6 +132,10 @@
 
 - (NSArray*)multipleTitles {
     return [_multipleValuesDict objectForKey:kIASKTitles];
+}
+
+- (NSArray*)multipleShortTitles {
+    return [_multipleValuesDict objectForKey:kIASKShortTitles];
 }
 
 - (NSString*)file {
