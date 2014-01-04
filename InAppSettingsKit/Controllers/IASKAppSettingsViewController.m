@@ -150,6 +150,10 @@ CGRect IASKCGRectSwap(CGRect rect);
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+	if (self.hideBackButton){
+		self.navigationItem.hidesBackButton = YES;
+		self.navigationController.navigationItem.hidesBackButton = YES;
+	}
 	// if there's something selected, the value might have changed
 	// so reload that row
 	NSIndexPath *selectedIndexPath = [self.tableView indexPathForSelectedRow];
