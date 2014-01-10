@@ -12,5 +12,5 @@ Pod::Spec.new do |s|
 
   s.source_files  = 'InAppSettingsKit/**/*.{h,m}'
   s.framework = 'MessageUI'
-
+  s.compiler_flags = '-fobjc-arc'
 end
