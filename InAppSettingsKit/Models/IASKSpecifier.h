@@ -51,7 +51,8 @@
 - (NSString*)footerText;
 - (Class)viewControllerClass;
 - (SEL)viewControllerSelector;
-- (NSString*)viewControllerStoryID;
+- (NSString*)viewControllerStoryBoardFile;
+- (NSString*)viewControllerStoryBoardID;
 - (Class)buttonClass;
 - (SEL)buttonAction;
 - (UIImage *)cellImage;

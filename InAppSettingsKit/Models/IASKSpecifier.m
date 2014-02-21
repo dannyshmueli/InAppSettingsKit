@@ -82,7 +82,11 @@
     return NSSelectorFromString([_specifierDict objectForKey:kIASKViewControllerSelector]);
 }
 
-- (NSString*)viewControllerStoryID {
+- (NSString*)viewControllerStoryBoardFile {
+	return [_specifierDict objectForKey:kIASKViewControllerStoryBoardFile];
+}
+
+- (NSString*)viewControllerStoryBoardID {
 	return [_specifierDict objectForKey:kIASKViewControllerStoryBoardId];
 }
 
