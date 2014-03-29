@@ -16,6 +16,7 @@
 
 #import "IASKSpecifier.h"
 #import "IASKSettingsReader.h"
+#import "IASKAppSettingsWebViewController.h"
 
 @interface IASKSpecifier ()
 
@@ -63,7 +64,8 @@
     [self setMultipleValuesDict:multipleValuesDict];
 }
 - (NSString*)localizedObjectForKey:(NSString*)key {
-	return [self.settingsReader titleForStringId:[_specifierDict objectForKey:key]];
+	IASKSettingsReader *settingsReader = self.settingsReader;
+	return [settingsReader titleForStringId:[_specifierDict objectForKey:key]];
 }
 
 - (NSString*)title {
@@ -75,6 +77,7 @@
 }
 
 - (Class)viewControllerClass {
+	[IASKAppSettingsWebViewController class]; // make sure this is linked into the binary/library
     return NSClassFromString([_specifierDict objectForKey:kIASKViewControllerClass]);
 }
 
@@ -120,7 +123,8 @@
 		return nil;
 	}
 	@try {
-		return [self.settingsReader titleForStringId:[titles objectAtIndex:keyIndex]];
+		IASKSettingsReader *strongSettingsReader = self.settingsReader;
+		return [strongSettingsReader titleForStringId:[titles objectAtIndex:keyIndex]];
 	}
 	@catch (NSException * e) {}
 	return nil;
@@ -213,12 +217,7 @@
         return UIKeyboardTypeASCIICapable;
     }
     else if ([[_specifierDict objectForKey:KIASKKeyboardType] isEqualToString:kIASKKeyboardDecimalPad]) {
-		if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iPhoneOS_4_1) {
-			return UIKeyboardTypeDecimalPad;
-		}
-		else {
-			return UIKeyboardTypeNumbersAndPunctuation;
-		}
+		return UIKeyboardTypeDecimalPad;
     }
     else if ([[_specifierDict objectForKey:KIASKKeyboardType] isEqualToString:KIASKKeyboardURL]) {
         return UIKeyboardTypeURL;
@@ -296,5 +295,9 @@
 		return NSTextAlignmentRight;
 	}
 	return NSTextAlignmentLeft;
+}
+
+- (id)valueForKey:(NSString *)key {
+	return [_specifierDict objectForKey:key];
 }
 @end

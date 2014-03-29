@@ -408,9 +408,20 @@ CGRect IASKCGRectSwap(CGRect rect);
 	}
 	NSString *title;
 	if ((title = [self tableView:tableView titleForHeaderInSection:section])) {
-		CGSize size = [title sizeWithFont:[UIFont boldSystemFontOfSize:[UIFont labelFontSize]] 
-						constrainedToSize:CGSizeMake(tableView.frame.size.width - 2*kIASKHorizontalPaddingGroupTitles, INFINITY)
-							lineBreakMode:NSLineBreakByWordWrapping];
+		CGSize size = CGSizeZero;
+		IASK_IF_PRE_IOS7
+		(
+		 size = [title sizeWithFont:[UIFont boldSystemFontOfSize:[UIFont labelFontSize]]
+                  constrainedToSize:CGSizeMake(tableView.frame.size.width - 2*kIASKHorizontalPaddingGroupTitles, INFINITY)
+					  lineBreakMode:NSLineBreakByWordWrapping];
+		 );
+		IASK_IF_IOS7_OR_GREATER
+		(
+		 size = [title boundingRectWithSize:CGSizeMake(tableView.frame.size.width - 2*kIASKHorizontalPaddingGroupTitles, INFINITY)
+									options:NSStringDrawingUsesLineFragmentOrigin
+								 attributes:@{NSFontAttributeName: [UIFont boldSystemFontOfSize:[UIFont labelFontSize]]}
+									context:nil].size;
+		);
 		return roundf(size.height+kIASKVerticalPaddingGroupTitles);
 	}
 	return 0;
@@ -471,8 +482,10 @@ CGRect IASKCGRectSwap(CGRect rect);
 	} else {
 		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
 	}
-	cell.textLabel.minimumFontSize = kIASKMinimumFontSize;
-	cell.detailTextLabel.minimumFontSize = kIASKMinimumFontSize;
+	IASK_IF_PRE_IOS6(cell.textLabel.minimumFontSize = kIASKMinimumFontSize;
+					 cell.detailTextLabel.minimumFontSize = kIASKMinimumFontSize;);
+	IASK_IF_IOS6_OR_GREATER(cell.textLabel.minimumScaleFactor = kIASKMinimumFontSize / cell.textLabel.font.pointSize;
+							cell.detailTextLabel.minimumScaleFactor = kIASKMinimumFontSize / cell.detailTextLabel.font.pointSize;);
 	return cell;
 }
 
@@ -590,6 +603,7 @@ CGRect IASKCGRectSwap(CGRect rect);
 	} else if ([specifier.type isEqualToString:kIASKButtonSpecifier]) {
 		NSString *value = [self.settingsStore objectForKey:specifier.key];
 		cell.textLabel.text = [value isKindOfClass:[NSString class]] ? [self.settingsReader titleForStringId:value] : specifier.title;
+		cell.accessoryType = (specifier.textAlignment == NSTextAlignmentLeft) ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
 	} else {
 		cell.textLabel.text = specifier.title;
 	}
@@ -662,7 +676,7 @@ CGRect IASKCGRectSwap(CGRect rect);
             UIViewController * vc = [vcClass alloc];
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-            vc = [vc performSelector:initSelector withObject:[specifier file] withObject:[specifier key]];
+            vc = [vc performSelector:initSelector withObject:[specifier file] withObject:specifier];
 #pragma clang diagnostic pop
             if ([vc respondsToSelector:@selector(setDelegate:)]) {
                 [vc performSelector:@selector(setDelegate:) withObject:self.delegate];
@@ -719,8 +733,7 @@ CGRect IASKCGRectSwap(CGRect rect);
             MFMailComposeViewController *mailViewController = [[MFMailComposeViewController alloc] init];
             mailViewController.navigationBar.barStyle = self.navigationController.navigationBar.barStyle;
             mailViewController.navigationBar.tintColor = self.navigationController.navigationBar.tintColor;
-            mailViewController.navigationBar.titleTextAttributes =
-            self.navigationController.navigationBar.titleTextAttributes;
+            mailViewController.navigationBar.titleTextAttributes =  self.navigationController.navigationBar.titleTextAttributes;
             
             if ([specifier localizedObjectForKey:kIASKMailComposeSubject]) {
                 [mailViewController setSubject:[specifier localizedObjectForKey:kIASKMailComposeSubject]];
@@ -761,9 +774,11 @@ CGRect IASKCGRectSwap(CGRect rect);
             
             mailViewController.mailComposeDelegate = vc;
             _currentChildViewController = mailViewController;
-            [vc presentViewController:mailViewController
-                             animated:YES
-                           completion:nil];
+            UIStatusBarStyle savedStatusBarStyle = [UIApplication sharedApplication].statusBarStyle;
+            [vc presentViewController:mailViewController animated:YES completion:^{
+			    [UIApplication sharedApplication].statusBarStyle = savedStatusBarStyle;
+            }];
+			
         } else {
             UIAlertView *alert = [[UIAlertView alloc]
                                   initWithTitle:NSLocalizedString(@"Mail not configured", @"InAppSettingsKit")
@@ -862,7 +877,9 @@ static NSDictionary *oldUserDefaults = nil;
 		}
 	}
 	if (indexPathsToUpdate.count) {
-		[self.tableView reloadRowsAtIndexPaths:indexPathsToUpdate withRowAnimation:UITableViewRowAnimationNone];
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+			[self.tableView reloadRowsAtIndexPaths:indexPathsToUpdate withRowAnimation:UITableViewRowAnimationNone];
+		});
 	}
 }
 
